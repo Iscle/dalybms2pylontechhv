@@ -1,0 +1,17 @@
+#pragma once
+
+#include <driver/spi_master.h>
+
+#define MCP2515_CANSTAT_OPMOD_SHIFT (5)
+#define MCP2515_CANSTAT_OPMOD_MASK (0xE0)
+#define MCP2515_CANSTAT_OPMOD_NORMAL (0x00 << MCP2515_CANSTAT_OPMOD_SHIFT)
+#define MCP2515_CANSTAT_OPMOD_SLEEP (0x01 << MCP2515_CANSTAT_OPMOD_SHIFT)
+#define MCP2515_CANSTAT_OPMOD_LOOPBACK (0x02 << MCP2515_CANSTAT_OPMOD_SHIFT)
+#define MCP2515_CANSTAT_OPMOD_LISTENONLY (0x03 << MCP2515_CANSTAT_OPMOD_SHIFT)
+#define MCP2515_CANSTAT_OPMOD_CONFIGURATION (0x04 << MCP2515_CANSTAT_OPMOD_SHIFT)
+
+struct mcp2515_handle {
+    spi_device_handle_t spi;
+};
+
+int mcp2515_init(struct mcp2515_handle *handle, spi_host_device_t spi_host, int cs);
