@@ -5,9 +5,7 @@
 #include "mcp2515.h"
 
 static struct mcp2515_handle inverter_can;
-static struct mcp2515_handle bms1_can;
-static struct mcp2515_handle bms2_can;
-static struct mcp2515_handle bms3_can;
+static struct mcp2515_handle bms_can[3];
 
 static int spi_init(spi_host_device_t spi_host, int mosi, int miso, int sclk) {
     int ret;
@@ -29,42 +27,54 @@ static int spi_init(spi_host_device_t spi_host, int mosi, int miso, int sclk) {
     return 0;
 }
 
-void app_main(void) {
+static void inverter_can_bus_init(void) {
     int ret;
-
-    ret = spi_init(SPI2_HOST, 13, 12, 14);
-    if (ret) {
-        printf("Failed to initialize SPI2 bus: %d\n", ret);
-    }
 
     ret = spi_init(SPI3_HOST, 23, 19, 18);
     if (ret) {
-        printf("Failed to initialize SPI3 bus: %d\n", ret);
+        printf("Failed to initialize inverter SPI bus: %d\n", ret);
+        assert(0);
     }
-
-    printf("SPI buses initialized successfully\n");
 
     ret = mcp2515_init(&inverter_can, SPI3_HOST, 5);
     if (ret) {
         printf("Failed to initialize inverter CAN bus: %d\n", ret);
+        assert(0);
+    }
+}
+
+static void bms_can_bus_init(void) {
+    int ret;
+
+    ret = spi_init(SPI2_HOST, 13, 12, 14);
+    if (ret) {
+        printf("Failed to initialize BMS SPI bus: %d\n", ret);
+        assert(0);
     }
 
-    printf("Inverter CAN bus initialized successfully\n");
-
-    // ret = mcp2515_init(&bms1_can, SPI2_HOST, -1);
+    // ret = mcp2515_init(&bms_can[0], SPI2_HOST, -1);
     // if (ret) {
     //     printf("Failed to initialize BMS 1 can bus: %d\n", ret);
+    //     assert(0);
     // }
-    // ret = mcp2515_init(&bms2_can, SPI2_HOST, -1);
+    // ret = mcp2515_init(&bms_can[1], SPI2_HOST, -1);
     // if (ret) {
     //     printf("Failed to initialize BMS 2 can bus: %d\n", ret);
+    //     assert(0);
     // }
-    // ret = mcp2515_init(&bms3_can, SPI2_HOST, -1);
+    // ret = mcp2515_init(&bms_can[2], SPI2_HOST, -1);
     // if (ret) {
     //     printf("Failed to initialize BMS 3 can bus: %d\n", ret);
+    //     assert(0);
     // }
+}
 
-    // printf("BMS CAN buses initialized successfully\n");
+void app_main(void) {
+    inverter_can_bus_init();
+    printf("Inverter CAN bus initialized successfully\n");
+
+    bms_can_bus_init();
+    printf("BMS CAN buses initialized successfully\n");
 
     while (1) {
         vTaskDelay(100 / portTICK_PERIOD_MS);
