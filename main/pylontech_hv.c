@@ -18,9 +18,9 @@
 
 #include "pylontech_hv.h"
 
-void pylontech_hv_0x4210(uint8_t *buf, uint32_t battery_voltage, int32_t battery_current, int16_t temp, uint8_t soc, uint8_t soh) {
+void pylontech_hv_0x4210(uint8_t *buf, int32_t battery_voltage, int32_t battery_current, int16_t temp, uint8_t soc, uint8_t soh) {
     // battery voltage
-    uint16_t pylontech_battery_voltage = (uint16_t) (battery_voltage / 100);
+    int16_t pylontech_battery_voltage = (int16_t) (battery_voltage / 100);
     buf[0] = (uint8_t) (pylontech_battery_voltage & 0xFF);
     buf[1] = (uint8_t) ((pylontech_battery_voltage >> 8) & 0xFF);
 
@@ -41,14 +41,14 @@ void pylontech_hv_0x4210(uint8_t *buf, uint32_t battery_voltage, int32_t battery
     buf[7] = soh;
 }
 
-void pylontech_hv_0x4220(uint8_t *buf, uint32_t charge_cutoff_voltage, uint32_t discharge_cutoff_voltage, int32_t max_charge_current, int32_t max_discharge_current) {
+void pylontech_hv_0x4220(uint8_t *buf, int32_t charge_cutoff_voltage, int32_t discharge_cutoff_voltage, int32_t max_charge_current, int32_t max_discharge_current) {
     // charge cutoff voltage
-    uint16_t pylontech_charge_cutoff_voltage = (uint16_t) (charge_cutoff_voltage / 100);
+    int16_t pylontech_charge_cutoff_voltage = (int16_t) (charge_cutoff_voltage / 100);
     buf[0] = (uint8_t) (pylontech_charge_cutoff_voltage & 0xFF);
     buf[1] = (uint8_t) ((pylontech_charge_cutoff_voltage >> 8) & 0xFF);
 
     // discharge cutoff voltage
-    uint16_t pylontech_discharge_cutoff_voltage = (uint16_t) (discharge_cutoff_voltage / 100);
+    int16_t pylontech_discharge_cutoff_voltage = (int16_t) (discharge_cutoff_voltage / 100);
     buf[2] = (uint8_t) (pylontech_discharge_cutoff_voltage & 0xFF);
     buf[3] = (uint8_t) ((pylontech_discharge_cutoff_voltage >> 8) & 0xFF);
 
@@ -63,7 +63,7 @@ void pylontech_hv_0x4220(uint8_t *buf, uint32_t charge_cutoff_voltage, uint32_t 
     buf[7] = (uint8_t) ((pylontech_max_discharge_current >> 8) & 0xFF);
 }
 
-void pylontech_hv_0x4230(uint8_t *buf, uint32_t max_cell_voltage, uint32_t min_cell_voltage, uint16_t max_cell_voltage_id, uint16_t min_cell_voltage_id) {
+void pylontech_hv_0x4230(uint8_t *buf, int32_t max_cell_voltage, int32_t min_cell_voltage, uint16_t max_cell_voltage_id, uint16_t min_cell_voltage_id) {
     // max cell voltage
     buf[0] = (uint8_t) (max_cell_voltage & 0xFF);
     buf[1] = (uint8_t) ((max_cell_voltage >> 8) & 0xFF);
@@ -120,7 +120,7 @@ void pylontech_hv_0x4250(uint8_t *buf, uint8_t basic_status, uint8_t cycle_perio
     buf[6] = (uint8_t) ((protection >> 8) & 0xFF);
 }
 
-void pylontech_hv_0x4260(uint8_t *buf, uint32_t max_module_voltage, uint32_t min_module_voltage, uint16_t max_module_voltage_id, uint16_t min_module_voltage_id) {
+void pylontech_hv_0x4260(uint8_t *buf, int32_t max_module_voltage, int32_t min_module_voltage, uint16_t max_module_voltage_id, uint16_t min_module_voltage_id) {
     // max module voltage
     buf[0] = (uint8_t) (max_module_voltage & 0xFF);
     buf[1] = (uint8_t) ((max_module_voltage >> 8) & 0xFF);
@@ -216,7 +216,7 @@ void pylontech_hv_0x7310(uint8_t *buf) {
     buf[7] = 0x0C;
 }
 
-void pylontech_hv_0x7320(uint8_t *buf, uint16_t battery_module_count, uint8_t battery_module_in_series, uint8_t battery_cell_count_in_module, uint32_t voltage_level, int32_t capacity_level) {
+void pylontech_hv_0x7320(uint8_t *buf, uint16_t battery_module_count, uint8_t battery_module_in_series, uint8_t battery_cell_count_in_module, int32_t voltage_level, int32_t capacity_level) {
     // battery module count
     buf[0] = (uint8_t) (battery_module_count & 0xFF);
     buf[1] = (uint8_t) ((battery_module_count >> 8) & 0xFF);
@@ -228,7 +228,7 @@ void pylontech_hv_0x7320(uint8_t *buf, uint16_t battery_module_count, uint8_t ba
     buf[3] = battery_cell_count_in_module;
 
     // voltage level
-    uint16_t pylontech_voltage_level = (uint16_t) (voltage_level / 1000);
+    int16_t pylontech_voltage_level = (int16_t) (voltage_level / 1000);
     buf[4] = (uint8_t) (pylontech_voltage_level & 0xFF);
     buf[5] = (uint8_t) ((pylontech_voltage_level >> 8) & 0xFF);
 
