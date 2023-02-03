@@ -1,3 +1,21 @@
+/*
+ * JK-BMS to Pylontech HV (High Voltage) CAN Bus converter
+ * Copyright (C) 2023  Iscle
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #pragma once
 
 #include <stdint.h>
@@ -20,30 +38,30 @@
 // extended fault
 // todo
 
-int pylontech_hv_0x4210(uint8_t *buf, float battery_voltage, float battery_current, float temp, uint8_t soc, uint8_t soh);
+void pylontech_hv_0x4210(uint8_t *buf, uint32_t battery_voltage, int32_t battery_current, int16_t temp, uint8_t soc, uint8_t soh);
 
-int pylontech_hv_0x4220(uint8_t *buf, float charge_cutoff_voltage, float discharge_cutoff_voltage, float max_charge_current, float max_discharge_current);
+void pylontech_hv_0x4220(uint8_t *buf, uint32_t charge_cutoff_voltage, uint32_t discharge_cutoff_voltage, int32_t max_charge_current, int32_t max_discharge_current);
 
-int pylontech_hv_0x4230(uint8_t *buf, float max_battery_cell_voltage, float min_battery_cell_voltage, uint16_t max_battery_cell_voltage_number, uint16_t min_battery_cell_voltage_number);
+void pylontech_hv_0x4230(uint8_t *buf, uint32_t max_cell_voltage, uint32_t min_cell_voltage, uint16_t max_cell_voltage_id, uint16_t min_cell_voltage_id);
 
-int pylontech_hv_0x4240(uint8_t *buf, float max_battery_cell_temp, float min_battery_cell_temp, uint16_t max_battery_cell_temp_number, uint16_t min_battery_cell_temp_number);
+void pylontech_hv_0x4240(uint8_t *buf, int16_t max_cell_temp, int16_t min_cell_temp, uint16_t max_cell_temp_id, uint16_t min_cell_temp_id);
 
-int pylontech_hv_0x4250(uint8_t *buf, uint8_t basic_status, uint8_t cycle_period, uint8_t fault, uint16_t alarm, uint16_t protection);
+void pylontech_hv_0x4250(uint8_t *buf, uint8_t basic_status, uint8_t cycle_period, uint8_t fault, uint16_t alarm, uint16_t protection);
 
-int pylontech_hv_0x4260(uint8_t *buf, float module_max_voltage, float module_min_voltage, uint16_t module_max_voltage_number, uint16_t module_min_voltage_number);
+void pylontech_hv_0x4260(uint8_t *buf, uint32_t max_module_voltage, uint32_t min_module_voltage, uint16_t max_module_voltage_id, uint16_t min_module_voltage_id);
 
-int pylontech_hv_0x4270(uint8_t *buf, float module_max_temp, float module_min_temp, uint16_t module_max_temp_number, uint16_t module_min_temp_number);
+void pylontech_hv_0x4270(uint8_t *buf, int16_t module_max_temp, int16_t module_min_temp, uint16_t module_max_temp_id, uint16_t module_min_temp_id);
 
-int pylontech_hv_0x4280(uint8_t *buf, uint8_t charge_forbidden, uint8_t discharge_forbidden);
+void pylontech_hv_0x4280(uint8_t *buf, uint8_t charge_forbidden, uint8_t discharge_forbidden);
 
-int pylontech_hv_0x4290(uint8_t *buf, uint8_t fault_extension);
+void pylontech_hv_0x4290(uint8_t *buf, uint8_t fault_extension);
 
 // todo: implement 0x42A0
 
-int pylontech_hv_0x7310(uint8_t *buf);
+void pylontech_hv_0x7310(uint8_t *buf);
 
-int pylontech_hv_0x7320(uint8_t *buf, uint16_t battery_module_count, uint8_t battery_module_in_series, uint8_t battery_cell_count_in_module, uint16_t voltage_level, uint16_t capacity_level);
+void pylontech_hv_0x7320(uint8_t *buf, uint16_t battery_module_count, uint8_t battery_module_in_series, uint8_t battery_cell_count_in_module, uint32_t voltage_level, int32_t capacity_level);
 
-int pylontech_hv_0x7330(uint8_t *buf);
+void pylontech_hv_0x7330(uint8_t *buf);
 
-int pylontech_hv_0x7340(uint8_t *buf);
+void pylontech_hv_0x7340(uint8_t *buf);
