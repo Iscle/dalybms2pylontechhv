@@ -8,7 +8,7 @@ The following units are the standard units for the code unless otherwise specifi
 
 - Voltage: mV (int32_t)
 - Current: mA (int32_t)
-- Temperature dºC (deca-degrees Celsius, x10^-1) (int16_t)
+- Temperature: dºC (deca-degrees Celsius, x10^-1) (int16_t)
 - Capacity: mAh (int32_t)
 
 ## References
