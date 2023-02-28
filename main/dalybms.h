@@ -1,5 +1,5 @@
 /*
- * JK-BMS to Pylontech HV (High Voltage) CAN Bus converter
+ * Daly BMS to Pylontech HV (High Voltage) CAN Bus converter
  * Copyright (C) 2023  Iscle
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -18,18 +18,19 @@
 
 #pragma once
 
-#include <driver/spi_master.h>
+#include <driver/uart.h>
 
-#define MCP2515_CANSTAT_OPMOD_SHIFT (5)
-#define MCP2515_CANSTAT_OPMOD_MASK (0xE0)
-#define MCP2515_CANSTAT_OPMOD_NORMAL (0x00 << MCP2515_CANSTAT_OPMOD_SHIFT)
-#define MCP2515_CANSTAT_OPMOD_SLEEP (0x01 << MCP2515_CANSTAT_OPMOD_SHIFT)
-#define MCP2515_CANSTAT_OPMOD_LOOPBACK (0x02 << MCP2515_CANSTAT_OPMOD_SHIFT)
-#define MCP2515_CANSTAT_OPMOD_LISTENONLY (0x03 << MCP2515_CANSTAT_OPMOD_SHIFT)
-#define MCP2515_CANSTAT_OPMOD_CONFIGURATION (0x04 << MCP2515_CANSTAT_OPMOD_SHIFT)
+#define DALYBMS_MAGIC 0xA5
 
-struct mcp2515_handle {
-    spi_device_handle_t spi;
-};
+struct dalybms_message {
+    uint8_t magic; // DALYBMS_MAGIC
+    uint8_t address; // 1 - 16
+    uint8_t id;
+    uint8_t len; // 8
+    uint8_t data[8];
+    uint8_t checksum;
+} __attribute__((packed)) ;
 
-int mcp2515_init(struct mcp2515_handle *handle, spi_host_device_t spi_host, int cs);
+void dalybms_test(void);
+
+void dalybms_init(uart_port_t uart_num, int ro, int re_de, int di);

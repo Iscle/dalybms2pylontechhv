@@ -1,5 +1,5 @@
 /*
- * JK-BMS to Pylontech HV (High Voltage) CAN Bus converter
+ * Daly BMS to Pylontech HV (High Voltage) CAN Bus converter
  * Copyright (C) 2023  Iscle
  * 
  * This program is free software: you can redistribute it and/or modify
@@ -16,9 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "pylontech_hv.h"
+#include "pylontechhv.h"
 
-void pylontech_hv_0x4210(uint8_t *buf, int32_t battery_voltage, int32_t battery_current, int16_t temp, uint8_t soc, uint8_t soh) {
+void pylontechhv_0x4210(uint8_t *buf, int32_t battery_voltage, int32_t battery_current, int16_t temp, uint8_t soc, uint8_t soh) {
     // battery voltage
     int16_t pylontech_battery_voltage = (int16_t) (battery_voltage / 100);
     buf[0] = (uint8_t) (pylontech_battery_voltage & 0xFF);
@@ -41,7 +41,7 @@ void pylontech_hv_0x4210(uint8_t *buf, int32_t battery_voltage, int32_t battery_
     buf[7] = soh;
 }
 
-void pylontech_hv_0x4220(uint8_t *buf, int32_t charge_cutoff_voltage, int32_t discharge_cutoff_voltage, int32_t max_charge_current, int32_t max_discharge_current) {
+void pylontechhv_0x4220(uint8_t *buf, int32_t charge_cutoff_voltage, int32_t discharge_cutoff_voltage, int32_t max_charge_current, int32_t max_discharge_current) {
     // charge cutoff voltage
     int16_t pylontech_charge_cutoff_voltage = (int16_t) (charge_cutoff_voltage / 100);
     buf[0] = (uint8_t) (pylontech_charge_cutoff_voltage & 0xFF);
@@ -63,7 +63,7 @@ void pylontech_hv_0x4220(uint8_t *buf, int32_t charge_cutoff_voltage, int32_t di
     buf[7] = (uint8_t) ((pylontech_max_discharge_current >> 8) & 0xFF);
 }
 
-void pylontech_hv_0x4230(uint8_t *buf, int32_t max_cell_voltage, int32_t min_cell_voltage, uint16_t max_cell_voltage_id, uint16_t min_cell_voltage_id) {
+void pylontechhv_0x4230(uint8_t *buf, int32_t max_cell_voltage, int32_t min_cell_voltage, uint16_t max_cell_voltage_id, uint16_t min_cell_voltage_id) {
     // max cell voltage
     buf[0] = (uint8_t) (max_cell_voltage & 0xFF);
     buf[1] = (uint8_t) ((max_cell_voltage >> 8) & 0xFF);
@@ -81,7 +81,7 @@ void pylontech_hv_0x4230(uint8_t *buf, int32_t max_cell_voltage, int32_t min_cel
     buf[7] = (uint8_t) ((min_cell_voltage_id >> 8) & 0xFF);
 }
 
-void pylontech_hv_0x4240(uint8_t *buf, int16_t max_cell_temp, int16_t min_cell_temp, uint16_t max_cell_temp_id, uint16_t min_cell_temp_id) {
+void pylontechhv_0x4240(uint8_t *buf, int16_t max_cell_temp, int16_t min_cell_temp, uint16_t max_cell_temp_id, uint16_t min_cell_temp_id) {
     // max cell temp
     int16_t pylontech_max_cell_temp = (int16_t) (max_cell_temp + 1000);
     buf[0] = (uint8_t) (pylontech_max_cell_temp & 0xFF);
@@ -101,7 +101,7 @@ void pylontech_hv_0x4240(uint8_t *buf, int16_t max_cell_temp, int16_t min_cell_t
     buf[7] = (uint8_t) ((min_cell_temp_id >> 8) & 0xFF);
 }
 
-void pylontech_hv_0x4250(uint8_t *buf, uint8_t basic_status, uint8_t cycle_period, uint8_t fault, uint16_t alarm, uint16_t protection) {
+void pylontechhv_0x4250(uint8_t *buf, uint8_t basic_status, uint8_t cycle_period, uint8_t fault, uint16_t alarm, uint16_t protection) {
     // basic status
     buf[0] = basic_status;
 
@@ -120,7 +120,7 @@ void pylontech_hv_0x4250(uint8_t *buf, uint8_t basic_status, uint8_t cycle_perio
     buf[6] = (uint8_t) ((protection >> 8) & 0xFF);
 }
 
-void pylontech_hv_0x4260(uint8_t *buf, int32_t max_module_voltage, int32_t min_module_voltage, uint16_t max_module_voltage_id, uint16_t min_module_voltage_id) {
+void pylontechhv_0x4260(uint8_t *buf, int32_t max_module_voltage, int32_t min_module_voltage, uint16_t max_module_voltage_id, uint16_t min_module_voltage_id) {
     // max module voltage
     buf[0] = (uint8_t) (max_module_voltage & 0xFF);
     buf[1] = (uint8_t) ((max_module_voltage >> 8) & 0xFF);
@@ -138,7 +138,7 @@ void pylontech_hv_0x4260(uint8_t *buf, int32_t max_module_voltage, int32_t min_m
     buf[7] = (uint8_t) ((min_module_voltage_id >> 8) & 0xFF);
 }
 
-void pylontech_hv_0x4270(uint8_t *buf, int16_t module_max_temp, int16_t module_min_temp, uint16_t module_max_temp_id, uint16_t module_min_temp_id) {
+void pylontechhv_0x4270(uint8_t *buf, int16_t module_max_temp, int16_t module_min_temp, uint16_t module_max_temp_id, uint16_t module_min_temp_id) {
     // module max temp
     int16_t pylontech_module_max_temp = (int16_t) ((module_max_temp + 100) * 10);
     buf[0] = (uint8_t) (pylontech_module_max_temp & 0xFF);
@@ -158,7 +158,7 @@ void pylontech_hv_0x4270(uint8_t *buf, int16_t module_max_temp, int16_t module_m
     buf[7] = (uint8_t) ((module_min_temp_id >> 8) & 0xFF);
 }
 
-void pylontech_hv_0x4280(uint8_t *buf, uint8_t charge_forbidden, uint8_t discharge_forbidden) {
+void pylontechhv_0x4280(uint8_t *buf, uint8_t charge_forbidden, uint8_t discharge_forbidden) {
     // charge forbidden
     buf[0] = charge_forbidden ? 0xAA : 0x00;
 
@@ -174,7 +174,7 @@ void pylontech_hv_0x4280(uint8_t *buf, uint8_t charge_forbidden, uint8_t dischar
     buf[7] = 0x00;
 }
 
-void pylontech_hv_0x4290(uint8_t *buf, uint8_t fault_extension) {
+void pylontechhv_0x4290(uint8_t *buf, uint8_t fault_extension) {
     // fault extension
     buf[0] = fault_extension;
 
@@ -190,7 +190,7 @@ void pylontech_hv_0x4290(uint8_t *buf, uint8_t fault_extension) {
 
 // todo: implement 0x42A0
 
-void pylontech_hv_0x7310(uint8_t *buf) {
+void pylontechhv_0x7310(uint8_t *buf) {
     // hardware version
     buf[0] = 0x01;
 
@@ -216,7 +216,7 @@ void pylontech_hv_0x7310(uint8_t *buf) {
     buf[7] = 0x0C;
 }
 
-void pylontech_hv_0x7320(uint8_t *buf, uint16_t battery_module_count, uint8_t battery_module_in_series, uint8_t battery_cell_count_in_module, int32_t voltage_level, int32_t capacity_level) {
+void pylontechhv_0x7320(uint8_t *buf, uint16_t battery_module_count, uint8_t battery_module_in_series, uint8_t battery_cell_count_in_module, int32_t voltage_level, int32_t capacity_level) {
     // battery module count
     buf[0] = (uint8_t) (battery_module_count & 0xFF);
     buf[1] = (uint8_t) ((battery_module_count >> 8) & 0xFF);
@@ -238,7 +238,7 @@ void pylontech_hv_0x7320(uint8_t *buf, uint16_t battery_module_count, uint8_t ba
     buf[7] = (uint8_t) ((pylontech_capacity_level >> 8) & 0xFF);
 }
 
-void pylontech_hv_0x7330(uint8_t *buf) {
+void pylontechhv_0x7330(uint8_t *buf) {
     buf[0] = 'P';
     buf[1] = 'Y';
     buf[2] = 'L';
@@ -249,7 +249,7 @@ void pylontech_hv_0x7330(uint8_t *buf) {
     buf[7] = 'C';
 }
 
-void pylontech_hv_0x7340(uint8_t *buf) {
+void pylontechhv_0x7340(uint8_t *buf) {
     buf[0] = 'H';
     buf[1] = 0x00;
     buf[2] = 0x00;
@@ -258,4 +258,8 @@ void pylontech_hv_0x7340(uint8_t *buf) {
     buf[5] = 0x00;
     buf[6] = 0x00;
     buf[7] = 0x00;
+}
+
+void pylontechhv_init() {
+
 }

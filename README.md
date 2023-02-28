@@ -1,6 +1,6 @@
-# jkbms2pylontech
+# dalybms2pylontechhv
 
-This project aims to create a multi JK-BMS to single Pylontech HV (high voltage) protocol bridge over CAN bus.
+This project aims to create a multi Daly BMS to single Pylontech HV (high voltage) protocol bridge over CAN bus.
 
 ## Units
 

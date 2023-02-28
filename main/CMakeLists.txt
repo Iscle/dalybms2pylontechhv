@@ -1,2 +1,2 @@
-idf_component_register(SRCS "jkbms.c" "pylontech_hv.c" "mcp2515.c" "main.c"
+idf_component_register(SRCS "ringbuf.c" "pylontechhv.c" "dalybms.c" "main.c"
                     INCLUDE_DIRS ".")
