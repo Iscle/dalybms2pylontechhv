@@ -27,7 +27,7 @@ void app_main(void) {
     dalybms_init(UART_NUM_2, 17, -1, 16);
     printf("Daly BMS initialized successfully\n");
 
-    pylontechhv_init();
+    pylontechhv_init(-1, -1);
     printf("Pylontech HV initialized successfully\n");
     
     while (1) {

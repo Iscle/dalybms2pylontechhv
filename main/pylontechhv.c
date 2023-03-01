@@ -17,249 +17,381 @@
  */
 
 #include "pylontechhv.h"
+#include <driver/twai.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include "log.h"
 
-void pylontechhv_0x4210(uint8_t *buf, int32_t battery_voltage, int32_t battery_current, int16_t temp, uint8_t soc, uint8_t soh) {
+static void pylontechhv_0x4210(twai_message_t *msg, int32_t battery_voltage, int32_t battery_current, int16_t temp, uint8_t soc, uint8_t soh) {
+    msg->data_length_code = 8;
+
     // battery voltage
     int16_t pylontech_battery_voltage = (int16_t) (battery_voltage / 100);
-    buf[0] = (uint8_t) (pylontech_battery_voltage & 0xFF);
-    buf[1] = (uint8_t) ((pylontech_battery_voltage >> 8) & 0xFF);
+    msg->data[0] = (uint8_t) (pylontech_battery_voltage & 0xFF);
+    msg->data[1] = (uint8_t) ((pylontech_battery_voltage >> 8) & 0xFF);
 
     // battery current
     int16_t pylontech_battery_current = (int16_t) ((battery_current / 100) + 300);
-    buf[2] = (uint8_t) (pylontech_battery_current & 0xFF);
-    buf[3] = (uint8_t) ((pylontech_battery_current >> 8) & 0xFF);
+    msg->data[2] = (uint8_t) (pylontech_battery_current & 0xFF);
+    msg->data[3] = (uint8_t) ((pylontech_battery_current >> 8) & 0xFF);
 
     // temp
     int16_t pylontech_temp = (int16_t) (temp + 1000);
-    buf[4] = (uint8_t) (pylontech_temp & 0xFF);
-    buf[5] = (uint8_t) ((pylontech_temp >> 8) & 0xFF);
+    msg->data[4] = (uint8_t) (pylontech_temp & 0xFF);
+    msg->data[5] = (uint8_t) ((pylontech_temp >> 8) & 0xFF);
 
     // soc
-    buf[6] = soc;
+    msg->data[6] = soc;
 
     // soh
-    buf[7] = soh;
+    msg->data[7] = soh;
 }
 
-void pylontechhv_0x4220(uint8_t *buf, int32_t charge_cutoff_voltage, int32_t discharge_cutoff_voltage, int32_t max_charge_current, int32_t max_discharge_current) {
+static void pylontechhv_0x4220(twai_message_t *msg, int32_t charge_cutoff_voltage, int32_t discharge_cutoff_voltage, int32_t max_charge_current, int32_t max_discharge_current) {
+    msg->data_length_code = 8;
+
     // charge cutoff voltage
     int16_t pylontech_charge_cutoff_voltage = (int16_t) (charge_cutoff_voltage / 100);
-    buf[0] = (uint8_t) (pylontech_charge_cutoff_voltage & 0xFF);
-    buf[1] = (uint8_t) ((pylontech_charge_cutoff_voltage >> 8) & 0xFF);
+    msg->data[0] = (uint8_t) (pylontech_charge_cutoff_voltage & 0xFF);
+    msg->data[1] = (uint8_t) ((pylontech_charge_cutoff_voltage >> 8) & 0xFF);
 
     // discharge cutoff voltage
     int16_t pylontech_discharge_cutoff_voltage = (int16_t) (discharge_cutoff_voltage / 100);
-    buf[2] = (uint8_t) (pylontech_discharge_cutoff_voltage & 0xFF);
-    buf[3] = (uint8_t) ((pylontech_discharge_cutoff_voltage >> 8) & 0xFF);
+    msg->data[2] = (uint8_t) (pylontech_discharge_cutoff_voltage & 0xFF);
+    msg->data[3] = (uint8_t) ((pylontech_discharge_cutoff_voltage >> 8) & 0xFF);
 
     // max charge current
     int16_t pylontech_max_charge_current = (int16_t) ((max_charge_current / 100) + 300);
-    buf[4] = (uint8_t) (pylontech_max_charge_current & 0xFF);
-    buf[5] = (uint8_t) ((pylontech_max_charge_current >> 8) & 0xFF);
+    msg->data[4] = (uint8_t) (pylontech_max_charge_current & 0xFF);
+    msg->data[5] = (uint8_t) ((pylontech_max_charge_current >> 8) & 0xFF);
 
     // max discharge current
     int16_t pylontech_max_discharge_current = (int16_t) ((max_discharge_current / 100) + 300);
-    buf[6] = (uint8_t) (pylontech_max_discharge_current & 0xFF);
-    buf[7] = (uint8_t) ((pylontech_max_discharge_current >> 8) & 0xFF);
+    msg->data[6] = (uint8_t) (pylontech_max_discharge_current & 0xFF);
+    msg->data[7] = (uint8_t) ((pylontech_max_discharge_current >> 8) & 0xFF);
 }
 
-void pylontechhv_0x4230(uint8_t *buf, int32_t max_cell_voltage, int32_t min_cell_voltage, uint16_t max_cell_voltage_id, uint16_t min_cell_voltage_id) {
+static void pylontechhv_0x4230(twai_message_t *msg, int32_t max_cell_voltage, int32_t min_cell_voltage, uint16_t max_cell_voltage_id, uint16_t min_cell_voltage_id) {
+    msg->data_length_code = 8;
+
     // max cell voltage
-    buf[0] = (uint8_t) (max_cell_voltage & 0xFF);
-    buf[1] = (uint8_t) ((max_cell_voltage >> 8) & 0xFF);
+    msg->data[0] = (uint8_t) (max_cell_voltage & 0xFF);
+    msg->data[1] = (uint8_t) ((max_cell_voltage >> 8) & 0xFF);
 
     // min cell voltage
-    buf[2] = (uint8_t) (min_cell_voltage & 0xFF);
-    buf[3] = (uint8_t) ((min_cell_voltage >> 8) & 0xFF);
+    msg->data[2] = (uint8_t) (min_cell_voltage & 0xFF);
+    msg->data[3] = (uint8_t) ((min_cell_voltage >> 8) & 0xFF);
 
     // max cell voltage id
-    buf[4] = (uint8_t) (max_cell_voltage_id & 0xFF);
-    buf[5] = (uint8_t) ((max_cell_voltage_id >> 8) & 0xFF);
+    msg->data[4] = (uint8_t) (max_cell_voltage_id & 0xFF);
+    msg->data[5] = (uint8_t) ((max_cell_voltage_id >> 8) & 0xFF);
 
     // min cell voltage id
-    buf[6] = (uint8_t) (min_cell_voltage_id & 0xFF);
-    buf[7] = (uint8_t) ((min_cell_voltage_id >> 8) & 0xFF);
+    msg->data[6] = (uint8_t) (min_cell_voltage_id & 0xFF);
+    msg->data[7] = (uint8_t) ((min_cell_voltage_id >> 8) & 0xFF);
 }
 
-void pylontechhv_0x4240(uint8_t *buf, int16_t max_cell_temp, int16_t min_cell_temp, uint16_t max_cell_temp_id, uint16_t min_cell_temp_id) {
+static void pylontechhv_0x4240(twai_message_t *msg, int16_t max_cell_temp, int16_t min_cell_temp, uint16_t max_cell_temp_id, uint16_t min_cell_temp_id) {
+    msg->data_length_code = 8;
+
     // max cell temp
     int16_t pylontech_max_cell_temp = (int16_t) (max_cell_temp + 1000);
-    buf[0] = (uint8_t) (pylontech_max_cell_temp & 0xFF);
-    buf[1] = (uint8_t) ((pylontech_max_cell_temp >> 8) & 0xFF);
+    msg->data[0] = (uint8_t) (pylontech_max_cell_temp & 0xFF);
+    msg->data[1] = (uint8_t) ((pylontech_max_cell_temp >> 8) & 0xFF);
 
     // min cell temp
     int16_t pylontech_min_cell_temp = (int16_t) (min_cell_temp + 1000);
-    buf[2] = (uint8_t) (pylontech_min_cell_temp & 0xFF);
-    buf[3] = (uint8_t) ((pylontech_min_cell_temp >> 8) & 0xFF);
+    msg->data[2] = (uint8_t) (pylontech_min_cell_temp & 0xFF);
+    msg->data[3] = (uint8_t) ((pylontech_min_cell_temp >> 8) & 0xFF);
 
     // max cell temp id
-    buf[4] = (uint8_t) (max_cell_temp_id & 0xFF);
-    buf[5] = (uint8_t) ((max_cell_temp_id >> 8) & 0xFF);
+    msg->data[4] = (uint8_t) (max_cell_temp_id & 0xFF);
+    msg->data[5] = (uint8_t) ((max_cell_temp_id >> 8) & 0xFF);
 
     // min cell temp id
-    buf[6] = (uint8_t) (min_cell_temp_id & 0xFF);
-    buf[7] = (uint8_t) ((min_cell_temp_id >> 8) & 0xFF);
+    msg->data[6] = (uint8_t) (min_cell_temp_id & 0xFF);
+    msg->data[7] = (uint8_t) ((min_cell_temp_id >> 8) & 0xFF);
 }
 
-void pylontechhv_0x4250(uint8_t *buf, uint8_t basic_status, uint8_t cycle_period, uint8_t fault, uint16_t alarm, uint16_t protection) {
+static void pylontechhv_0x4250(twai_message_t *msg, uint8_t basic_status, uint16_t cycle_period, uint8_t fault, uint16_t alarm, uint16_t protection) {
+    msg->data_length_code = 8;
+
     // basic status
-    buf[0] = basic_status;
+    msg->data[0] = basic_status;
 
     // cycle period
-    buf[1] = cycle_period;
+    msg->data[1] = (uint8_t) (cycle_period & 0xFF);
+    msg->data[2] = (uint8_t) ((cycle_period >> 8) & 0xFF);
 
     // fault
-    buf[2] = fault;
+    msg->data[3] = fault;
 
     // alarm
-    buf[3] = (uint8_t) (alarm & 0xFF);
-    buf[4] = (uint8_t) ((alarm >> 8) & 0xFF);
+    msg->data[4] = (uint8_t) (alarm & 0xFF);
+    msg->data[5] = (uint8_t) ((alarm >> 8) & 0xFF);
 
     // protection
-    buf[5] = (uint8_t) (protection & 0xFF);
-    buf[6] = (uint8_t) ((protection >> 8) & 0xFF);
+    msg->data[6] = (uint8_t) (protection & 0xFF);
+    msg->data[7] = (uint8_t) ((protection >> 8) & 0xFF);
 }
 
-void pylontechhv_0x4260(uint8_t *buf, int32_t max_module_voltage, int32_t min_module_voltage, uint16_t max_module_voltage_id, uint16_t min_module_voltage_id) {
+static void pylontechhv_0x4260(twai_message_t *msg, int32_t max_module_voltage, int32_t min_module_voltage, uint16_t max_module_voltage_id, uint16_t min_module_voltage_id) {
+    msg->data_length_code = 8;
+    
     // max module voltage
-    buf[0] = (uint8_t) (max_module_voltage & 0xFF);
-    buf[1] = (uint8_t) ((max_module_voltage >> 8) & 0xFF);
+    msg->data[0] = (uint8_t) (max_module_voltage & 0xFF);
+    msg->data[1] = (uint8_t) ((max_module_voltage >> 8) & 0xFF);
 
     // min module voltage
-    buf[2] = (uint8_t) (min_module_voltage & 0xFF);
-    buf[3] = (uint8_t) ((min_module_voltage >> 8) & 0xFF);
+    msg->data[2] = (uint8_t) (min_module_voltage & 0xFF);
+    msg->data[3] = (uint8_t) ((min_module_voltage >> 8) & 0xFF);
 
     // max module voltage id
-    buf[4] = (uint8_t) (max_module_voltage_id & 0xFF);
-    buf[5] = (uint8_t) ((max_module_voltage_id >> 8) & 0xFF);
+    msg->data[4] = (uint8_t) (max_module_voltage_id & 0xFF);
+    msg->data[5] = (uint8_t) ((max_module_voltage_id >> 8) & 0xFF);
 
     // min module voltage id
-    buf[6] = (uint8_t) (min_module_voltage_id & 0xFF);
-    buf[7] = (uint8_t) ((min_module_voltage_id >> 8) & 0xFF);
+    msg->data[6] = (uint8_t) (min_module_voltage_id & 0xFF);
+    msg->data[7] = (uint8_t) ((min_module_voltage_id >> 8) & 0xFF);
 }
 
-void pylontechhv_0x4270(uint8_t *buf, int16_t module_max_temp, int16_t module_min_temp, uint16_t module_max_temp_id, uint16_t module_min_temp_id) {
+static void pylontechhv_0x4270(twai_message_t *msg, int16_t module_max_temp, int16_t module_min_temp, uint16_t module_max_temp_id, uint16_t module_min_temp_id) {
+    msg->data_length_code = 8;
+    
     // module max temp
     int16_t pylontech_module_max_temp = (int16_t) ((module_max_temp + 100) * 10);
-    buf[0] = (uint8_t) (pylontech_module_max_temp & 0xFF);
-    buf[1] = (uint8_t) ((pylontech_module_max_temp >> 8) & 0xFF);
+    msg->data[0] = (uint8_t) (pylontech_module_max_temp & 0xFF);
+    msg->data[1] = (uint8_t) ((pylontech_module_max_temp >> 8) & 0xFF);
 
     // module min temp
     int16_t pylontech_module_min_temp = (int16_t) ((module_min_temp + 100) * 10);
-    buf[2] = (uint8_t) (pylontech_module_min_temp & 0xFF);
-    buf[3] = (uint8_t) ((pylontech_module_min_temp >> 8) & 0xFF);
+    msg->data[2] = (uint8_t) (pylontech_module_min_temp & 0xFF);
+    msg->data[3] = (uint8_t) ((pylontech_module_min_temp >> 8) & 0xFF);
 
-    // module max temp number
-    buf[4] = (uint8_t) (module_max_temp_id & 0xFF);
-    buf[5] = (uint8_t) ((module_max_temp_id >> 8) & 0xFF);
+    // module max temp id
+    msg->data[4] = (uint8_t) (module_max_temp_id & 0xFF);
+    msg->data[5] = (uint8_t) ((module_max_temp_id >> 8) & 0xFF);
 
-    // module min temp number
-    buf[6] = (uint8_t) (module_min_temp_id & 0xFF);
-    buf[7] = (uint8_t) ((module_min_temp_id >> 8) & 0xFF);
+    // module min temp id
+    msg->data[6] = (uint8_t) (module_min_temp_id & 0xFF);
+    msg->data[7] = (uint8_t) ((module_min_temp_id >> 8) & 0xFF);
 }
 
-void pylontechhv_0x4280(uint8_t *buf, uint8_t charge_forbidden, uint8_t discharge_forbidden) {
+static void pylontechhv_0x4280(twai_message_t *msg, uint8_t charge_forbidden, uint8_t discharge_forbidden) {
+    msg->data_length_code = 8;
+
     // charge forbidden
-    buf[0] = charge_forbidden ? 0xAA : 0x00;
+    msg->data[0] = charge_forbidden ? 0xAA : 0x00;
 
     // discharge forbidden
-    buf[1] = discharge_forbidden ? 0xAA : 0x00;
+    msg->data[1] = discharge_forbidden ? 0xAA : 0x00;
 
     // reserved
-    buf[2] = 0x00;
-    buf[3] = 0x00;
-    buf[4] = 0x00;
-    buf[5] = 0x00;
-    buf[6] = 0x00;
-    buf[7] = 0x00;
+    msg->data[2] = 0x00;
+    msg->data[3] = 0x00;
+    msg->data[4] = 0x00;
+    msg->data[5] = 0x00;
+    msg->data[6] = 0x00;
+    msg->data[7] = 0x00;
 }
 
-void pylontechhv_0x4290(uint8_t *buf, uint8_t fault_extension) {
+static void pylontechhv_0x4290(twai_message_t *msg, uint8_t fault_extension) {
+    msg->data_length_code = 8;
+
     // fault extension
-    buf[0] = fault_extension;
+    msg->data[0] = fault_extension;
 
     // reserved
-    buf[1] = 0x00;
-    buf[2] = 0x00;
-    buf[3] = 0x00;
-    buf[4] = 0x00;
-    buf[5] = 0x00;
-    buf[6] = 0x00;
-    buf[7] = 0x00;
+    msg->data[1] = 0x00;
+    msg->data[2] = 0x00;
+    msg->data[3] = 0x00;
+    msg->data[4] = 0x00;
+    msg->data[5] = 0x00;
+    msg->data[6] = 0x00;
+    msg->data[7] = 0x00;
 }
 
 // todo: implement 0x42A0
 
-void pylontechhv_0x7310(uint8_t *buf) {
+static void pylontechhv_0x7310(twai_message_t *msg) {
+    msg->data_length_code = 8;
+
     // hardware version
-    buf[0] = 0x01;
+    msg->data[0] = 0x01;
 
     // reserved
-    buf[1] = 0x00;
+    msg->data[1] = 0x00;
 
     // hardware version v
-    buf[2] = 0x10;
+    msg->data[2] = 0x10;
 
     // hardware version r
-    buf[3] = 0x02;
+    msg->data[3] = 0x02;
 
     // software version v major
-    buf[4] = 0x04;
+    msg->data[4] = 0x04;
 
     // software version v minor
-    buf[5] = 0x05;
+    msg->data[5] = 0x05;
 
     // software version
-    buf[6] = 0x34;
+    msg->data[6] = 0x34;
 
     // software version
-    buf[7] = 0x0C;
+    msg->data[7] = 0x0C;
 }
 
-void pylontechhv_0x7320(uint8_t *buf, uint16_t battery_module_count, uint8_t battery_module_in_series, uint8_t battery_cell_count_in_module, int32_t voltage_level, int32_t capacity_level) {
+static void pylontechhv_0x7320(twai_message_t *msg, uint16_t battery_module_count, uint8_t battery_module_in_series, uint8_t battery_cell_count_in_module, int32_t voltage_level, int32_t capacity_level) {
+    msg->data_length_code = 8;
+
     // battery module count
-    buf[0] = (uint8_t) (battery_module_count & 0xFF);
-    buf[1] = (uint8_t) ((battery_module_count >> 8) & 0xFF);
+    msg->data[0] = (uint8_t) (battery_module_count & 0xFF);
+    msg->data[1] = (uint8_t) ((battery_module_count >> 8) & 0xFF);
 
     // battery module in series
-    buf[2] = battery_module_in_series;
+    msg->data[2] = battery_module_in_series;
 
     // battery cell count in module
-    buf[3] = battery_cell_count_in_module;
+    msg->data[3] = battery_cell_count_in_module;
 
     // voltage level
     int16_t pylontech_voltage_level = (int16_t) (voltage_level / 1000);
-    buf[4] = (uint8_t) (pylontech_voltage_level & 0xFF);
-    buf[5] = (uint8_t) ((pylontech_voltage_level >> 8) & 0xFF);
+    msg->data[4] = (uint8_t) (pylontech_voltage_level & 0xFF);
+    msg->data[5] = (uint8_t) ((pylontech_voltage_level >> 8) & 0xFF);
 
     // capacity level
     int16_t pylontech_capacity_level = (int16_t) (capacity_level / 1000);
-    buf[6] = (uint8_t) (pylontech_capacity_level & 0xFF);
-    buf[7] = (uint8_t) ((pylontech_capacity_level >> 8) & 0xFF);
+    msg->data[6] = (uint8_t) (pylontech_capacity_level & 0xFF);
+    msg->data[7] = (uint8_t) ((pylontech_capacity_level >> 8) & 0xFF);
 }
 
-void pylontechhv_0x7330(uint8_t *buf) {
-    buf[0] = 'P';
-    buf[1] = 'Y';
-    buf[2] = 'L';
-    buf[3] = 'O';
-    buf[4] = 'N';
-    buf[5] = 'T';
-    buf[6] = 'E';
-    buf[7] = 'C';
+static void pylontechhv_0x7330(twai_message_t *msg) {
+    msg->data_length_code = 8;
+    msg->data[0] = 'P';
+    msg->data[1] = 'Y';
+    msg->data[2] = 'L';
+    msg->data[3] = 'O';
+    msg->data[4] = 'N';
+    msg->data[5] = 'T';
+    msg->data[6] = 'E';
+    msg->data[7] = 'C';
 }
 
-void pylontechhv_0x7340(uint8_t *buf) {
-    buf[0] = 'H';
-    buf[1] = 0x00;
-    buf[2] = 0x00;
-    buf[3] = 0x00;
-    buf[4] = 0x00;
-    buf[5] = 0x00;
-    buf[6] = 0x00;
-    buf[7] = 0x00;
+static void pylontechhv_0x7340(twai_message_t *msg) {
+    msg->data_length_code = 8;
+    msg->data[0] = 'H';
+    msg->data[1] = 0x00;
+    msg->data[2] = 0x00;
+    msg->data[3] = 0x00;
+    msg->data[4] = 0x00;
+    msg->data[5] = 0x00;
+    msg->data[6] = 0x00;
+    msg->data[7] = 0x00;
 }
 
-void pylontechhv_init() {
+static uint8_t device_address = 1;
 
+static void pylontechhv_send_0x4200_0_response(void) {
+    twai_message_t msg = {
+        .extd = 1,
+    };
+
+    msg.identifier = 0x4210 + device_address;
+    pylontechhv_0x4210(&msg, 0, 0, 0, 0, 0);
+    assert(twai_transmit(&msg, portMAX_DELAY) == ESP_OK);
+
+    msg.identifier = 0x4220 + device_address;
+    pylontechhv_0x4220(&msg, 0, 0, 0, 0);
+    assert(twai_transmit(&msg, portMAX_DELAY) == ESP_OK);
+
+    msg.identifier = 0x4230 + device_address;
+    pylontechhv_0x4230(&msg, 0, 0, 0, 0);
+    assert(twai_transmit(&msg, portMAX_DELAY) == ESP_OK);
+
+    msg.identifier = 0x4240 + device_address;
+    pylontechhv_0x4240(&msg, 0, 0, 0, 0);
+    assert(twai_transmit(&msg, portMAX_DELAY) == ESP_OK);
+
+    msg.identifier = 0x4250 + device_address;
+    pylontechhv_0x4250(&msg, 0, 0, 0, 0, 0);
+    assert(twai_transmit(&msg, portMAX_DELAY) == ESP_OK);
+
+    msg.identifier = 0x4260 + device_address;
+    pylontechhv_0x4260(&msg, 0, 0, 0, 0);
+    assert(twai_transmit(&msg, portMAX_DELAY) == ESP_OK);
+
+    msg.identifier = 0x4270 + device_address;
+    pylontechhv_0x4270(&msg, 0, 0, 0, 0);
+    assert(twai_transmit(&msg, portMAX_DELAY) == ESP_OK);
+
+    msg.identifier = 0x4280 + device_address;
+    pylontechhv_0x4280(&msg, 0, 0);
+    assert(twai_transmit(&msg, portMAX_DELAY) == ESP_OK);
+
+    msg.identifier = 0x4290 + device_address;
+    pylontechhv_0x4290(&msg, 0);
+    assert(twai_transmit(&msg, portMAX_DELAY) == ESP_OK);
+}
+
+static void pylontechhv_send_0x4200_2_response(void) {
+    twai_message_t msg = {
+        .extd = 1,
+    };
+
+    msg.identifier = 0x7310 + device_address;
+    pylontechhv_0x7310(&msg);
+    assert(twai_transmit(&msg, portMAX_DELAY) == ESP_OK);
+
+    msg.identifier = 0x7320 + device_address;
+    pylontechhv_0x7320(&msg, 0, 0, 0, 0, 0);
+    assert(twai_transmit(&msg, portMAX_DELAY) == ESP_OK);
+
+    msg.identifier = 0x7330 + device_address;
+    pylontechhv_0x7330(&msg);
+    assert(twai_transmit(&msg, portMAX_DELAY) == ESP_OK);
+
+    msg.identifier = 0x7340 + device_address;
+    pylontechhv_0x7340(&msg);
+    assert(twai_transmit(&msg, portMAX_DELAY) == ESP_OK);
+}
+
+#define PYLONTECHHV_CAN_REQUEST_ID 0x4200
+#define PYLONTECHHV_CAN_SLEEP_AWAKE_ID 0x8200
+#define PYLONTECHHV_CAN_CHARGE_DISCHARGE_ID 0x8210
+#define PYLONTECHHV_CAN_ERROR_MASK_ID 0x8240
+
+static void pylontechhv_recv_can(void *arg) {
+    while (1) {
+        twai_message_t msg;
+        if (twai_receive(&msg, portMAX_DELAY) == ESP_OK) {
+            LOGI("pylontechhv: Received CAN message with ID 0x%04lX", msg.identifier);
+
+            if (msg.identifier == PYLONTECHHV_CAN_REQUEST_ID) {
+                if (msg.data[0] == 0) {
+                    pylontechhv_send_0x4200_0_response();
+                } else if (msg.data[0] == 2) {
+                    pylontechhv_send_0x4200_2_response();
+                }
+            } else if ((msg.identifier & 0xFFF0) == PYLONTECHHV_CAN_SLEEP_AWAKE_ID) {
+                
+            } else if ((msg.identifier & 0xFFF0) == PYLONTECHHV_CAN_CHARGE_DISCHARGE_ID) {
+
+            } else if ((msg.identifier & 0xFFF0) == PYLONTECHHV_CAN_ERROR_MASK_ID) {
+
+            } else {
+                LOGW("pylontechhv: Received unknown CAN message with ID 0x%04lX", msg.identifier);
+            }
+        }
+    }
+}
+
+void pylontechhv_init(gpio_num_t tx, gpio_num_t rx) {
+    twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(GPIO_NUM_21, GPIO_NUM_22, TWAI_MODE_NORMAL);
+    twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS();
+    twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
+
+    assert(twai_driver_install(&g_config, &t_config, &f_config) == ESP_OK);
+    assert(twai_start() == ESP_OK);
+
+    xTaskCreate(pylontechhv_recv_can, "pylontechhv_recv_can", 2048, NULL, 5, NULL);
 }

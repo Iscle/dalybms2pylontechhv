@@ -19,6 +19,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <driver/gpio.h>
 
 // basic status
 #define PYLONTECH_BASIC_STATUS_FLAG_SLEEP 0x00
@@ -38,32 +39,4 @@
 // extended fault
 // todo
 
-void pylontechhv_0x4210(uint8_t *buf, int32_t battery_voltage, int32_t battery_current, int16_t temp, uint8_t soc, uint8_t soh);
-
-void pylontechhv_0x4220(uint8_t *buf, int32_t charge_cutoff_voltage, int32_t discharge_cutoff_voltage, int32_t max_charge_current, int32_t max_discharge_current);
-
-void pylontechhv_0x4230(uint8_t *buf, int32_t max_cell_voltage, int32_t min_cell_voltage, uint16_t max_cell_voltage_id, uint16_t min_cell_voltage_id);
-
-void pylontechhv_0x4240(uint8_t *buf, int16_t max_cell_temp, int16_t min_cell_temp, uint16_t max_cell_temp_id, uint16_t min_cell_temp_id);
-
-void pylontechhv_0x4250(uint8_t *buf, uint8_t basic_status, uint8_t cycle_period, uint8_t fault, uint16_t alarm, uint16_t protection);
-
-void pylontechhv_0x4260(uint8_t *buf, int32_t max_module_voltage, int32_t min_module_voltage, uint16_t max_module_voltage_id, uint16_t min_module_voltage_id);
-
-void pylontechhv_0x4270(uint8_t *buf, int16_t module_max_temp, int16_t module_min_temp, uint16_t module_max_temp_id, uint16_t module_min_temp_id);
-
-void pylontechhv_0x4280(uint8_t *buf, uint8_t charge_forbidden, uint8_t discharge_forbidden);
-
-void pylontechhv_0x4290(uint8_t *buf, uint8_t fault_extension);
-
-// todo: implement 0x42A0
-
-void pylontechhv_0x7310(uint8_t *buf);
-
-void pylontechhv_0x7320(uint8_t *buf, uint16_t battery_module_count, uint8_t battery_module_in_series, uint8_t battery_cell_count_in_module, int32_t voltage_level, int32_t capacity_level);
-
-void pylontechhv_0x7330(uint8_t *buf);
-
-void pylontechhv_0x7340(uint8_t *buf);
-
-void pylontechhv_init();
+void pylontechhv_init(gpio_num_t tx, gpio_num_t rx);

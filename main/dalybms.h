@@ -19,6 +19,7 @@
 #pragma once
 
 #include <driver/uart.h>
+#include <driver/gpio.h>
 
 #define DALYBMS_MAGIC 0xA5
 
@@ -33,4 +34,4 @@ struct dalybms_message {
 
 void dalybms_test(void);
 
-void dalybms_init(uart_port_t uart_num, int ro, int re_de, int di);
+void dalybms_init(uart_port_t uart_num, gpio_num_t ro, gpio_num_t re_de, gpio_num_t di);

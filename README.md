@@ -1,6 +1,6 @@
 # dalybms2pylontechhv
 
-This project aims to create a multi Daly BMS to single Pylontech HV (high voltage) protocol bridge over CAN bus.
+This project aims to create a multi Daly BMS to single Pylontech HV (high voltage) protocol bridge over RS-485 and CAN bus.
 
 ## Units
 
