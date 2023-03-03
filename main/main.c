@@ -27,11 +27,6 @@ void app_main(void) {
     dalybms_init(UART_NUM_2, 17, -1, 16);
     printf("Daly BMS initialized successfully\n");
 
-    pylontechhv_init(-1, -1);
+    pylontechhv_init(18, 19);
     printf("Pylontech HV initialized successfully\n");
-    
-    while (1) {
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-        dalybms_test();
-    }
 }

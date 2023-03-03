@@ -23,7 +23,10 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
+#define DALYBMS_MAGIC 0xA5
+
 static uart_port_t _uart_num;
+static struct dalybms_data _data[DALYBMS_MAX_BMS];
 
 static void dalybms_parse_0x90(const struct dalybms_message *msg, int32_t *pack_voltage, int32_t *samp_total_volt, int32_t *pack_current, uint16_t *pack_soc) {
     *pack_voltage = ((msg->data[0]) << 8 | (msg->data[1])) * 100;
@@ -32,11 +35,11 @@ static void dalybms_parse_0x90(const struct dalybms_message *msg, int32_t *pack_
     *pack_soc = ((msg->data[6]) << 8 | (msg->data[7]));
 }
 
-static void dalybms_parse_0x91(const struct dalybms_message *msg, int32_t *max_cell_voltage, uint8_t *max_cell_id, int32_t *min_cell_voltage, uint8_t *min_cell_id) {
+static void dalybms_parse_0x91(const struct dalybms_message *msg, int32_t *max_cell_voltage, uint8_t *max_cell_voltage_id, int32_t *min_cell_voltage, uint8_t *min_cell_voltage_id) {
     *max_cell_voltage = (msg->data[0]) << 8 | (msg->data[1]);
-    *max_cell_id = msg->data[2];
+    *max_cell_voltage_id = msg->data[2];
     *min_cell_voltage = (msg->data[3]) << 8 | (msg->data[4]);
-    *min_cell_id = msg->data[5];
+    *min_cell_voltage_id = msg->data[5];
 }
 
 static void dalybms_parse_0x92(const struct dalybms_message *msg, int16_t *max_temperature, uint8_t *max_temperature_id, int16_t *min_temperature, uint8_t *min_temperature_id) {
@@ -63,13 +66,14 @@ static void dalybms_parse_0x94(const struct dalybms_message *msg, uint8_t *cell_
     *cycle_count = (msg->data[5]) << 8 | (msg->data[6]);
 }
 
-static void dalybms_parse_0x95(const struct dalybms_message *msg, int32_t *cell_voltages) {
+static uint8_t dalybms_parse_0x95(const struct dalybms_message *msg, int32_t *cell_voltages) {
     cell_voltages[msg->data[0] * 3 + 0] = (msg->data[1]) << 8 | (msg->data[2]);
     cell_voltages[msg->data[0] * 3 + 1] = (msg->data[3]) << 8 | (msg->data[4]);
     cell_voltages[msg->data[0] * 3 + 2] = (msg->data[5]) << 8 | (msg->data[6]);
+    return msg->data[0];
 }
 
-static void dalybms_parse_0x96(const struct dalybms_message *msg, int32_t *temperatures) {
+static uint8_t dalybms_parse_0x96(const struct dalybms_message *msg, int16_t *temperatures) {
     temperatures[msg->data[0] * 3 + 0] = (msg->data[1] - 40) * 10;
     temperatures[msg->data[0] * 3 + 1] = (msg->data[2] - 40) * 10;
     temperatures[msg->data[0] * 3 + 2] = (msg->data[3] - 40) * 10;
@@ -77,6 +81,7 @@ static void dalybms_parse_0x96(const struct dalybms_message *msg, int32_t *tempe
     temperatures[msg->data[0] * 3 + 4] = (msg->data[5] - 40) * 10;
     temperatures[msg->data[0] * 3 + 5] = (msg->data[6] - 40) * 10;
     temperatures[msg->data[0] * 3 + 6] = (msg->data[7] - 40) * 10;
+    return msg->data[0];
 }
 
 static void dalybms_parse_0x97(const struct dalybms_message *msg, uint8_t *balance_states) {
@@ -102,44 +107,55 @@ static void dalybms_parse_0x98(const struct dalybms_message *msg, uint8_t *error
 }
 
 static void dalybms_handle_message(struct dalybms_message *msg) {
+    struct dalybms_data *data = &_data[msg->address - 1];
+
     switch (msg->id) {
         case 0x90: {
-            
+            dalybms_parse_0x90(msg, &data->pack_voltage, &data->samp_total_volt, &data->pack_current, &data->pack_soc);
+            LOGI("dalybms: 0x90: pack_voltage=%ld, samp_total_volt=%ld, pack_current=%ld, pack_soc=%d\n", data->pack_voltage, data->samp_total_volt, data->pack_current, data->pack_soc);
             break;
         }
         case 0x91: {
-            
+            dalybms_parse_0x91(msg, &data->max_cell_voltage, &data->max_cell_voltage_id, &data->min_cell_voltage, &data->min_cell_voltage_id);
+            LOGI("dalybms: 0x91: max_cell_voltage=%ld, max_cell_voltage_id=%d, min_cell_voltage=%ld, min_cell_voltage_id=%d\n", data->max_cell_voltage, data->max_cell_voltage_id, data->min_cell_voltage, data->min_cell_voltage_id);
             break;
         }
         case 0x92: {
-            
+            dalybms_parse_0x92(msg, &data->max_temperature, &data->max_temperature_id, &data->min_temperature, &data->min_temperature_id);
+            LOGI("dalybms: 0x92: max_temperature=%d, max_temperature_id=%d, min_temperature=%d, min_temperature_id=%d\n", data->max_temperature, data->max_temperature_id, data->min_temperature, data->min_temperature_id);
             break;
         }
         case 0x93: {
-            
+            dalybms_parse_0x93(msg, &data->charge_discharge_status, &data->charge_fet_status, &data->discharge_fet_status, &data->bms_life, &data->residual_capacity);
+            LOGI("dalybms: 0x93: charge_discharge_status=%d, charge_fet_status=%d, discharge_fet_status=%d, bms_life=%d, residual_capacity=%ld\n", data->charge_discharge_status, data->charge_fet_status, data->discharge_fet_status, data->bms_life, data->residual_capacity);
             break;
         }
         case 0x94: {
-            
+            dalybms_parse_0x94(msg, &data->cell_count, &data->temp_sensor_count, &data->charge_status, &data->load_status, &data->dio, &data->cycle_count);
+            LOGI("dalybms: 0x94: cell_count=%d, temp_sensor_count=%d, charge_status=%d, load_status=%d, dio=%d, cycle_count=%d\n", data->cell_count, data->temp_sensor_count, data->charge_status, data->load_status, data->dio, data->cycle_count);
             break;
         }
         case 0x95: {
-            
+            uint8_t iteration = dalybms_parse_0x95(msg, data->cell_voltages);
+            LOGI("dalybms: 0x95: iteration=%d\n", iteration);
             break;
         }
         case 0x96: {
-            
+            uint8_t iteration = dalybms_parse_0x96(msg, data->temperatures);
+            LOGI("dalybms: 0x96: iteration=%d\n", iteration);
             break;
         }
         case 0x97: {
-            
+            dalybms_parse_0x97(msg, data->balance_states);
             break;
         }
         case 0x98: {
-            
+            dalybms_parse_0x98(msg, data->errors);
             break;
         }
     }
+
+    LOGI("dalybms: Handled message 0x%02X from %d successfully\n", msg->id, msg->address);
 }
 
 static uint8_t dalybms_checksum(const uint8_t *buf) {
@@ -161,34 +177,66 @@ static void printbuf(uint8_t *buf, size_t len) {
     if (len > 0) printf("}");
 }
 
-void dalybms_receive(void *arg) {
+static int dalybms_send(struct dalybms_message *msg) {
+    msg->magic = DALYBMS_MAGIC;
+    if (msg->address < 0x40) msg->address += 0x40 - 1; // Address 1 is 0x40
+    msg->len = 8;
+    msg->checksum = dalybms_checksum((uint8_t *) msg);
+    return uart_write_bytes(_uart_num, msg, sizeof(struct dalybms_message)) == sizeof(struct dalybms_message);
+}
+
+static void dalybms_task_function(void *arg) {
     LOGI("dalybms: Starting receive task...\n");
 
     ringbuf_t rbuf;
     ringbuf_init(&rbuf);
 
+    uint8_t next_id = 0x90;
+    uint8_t next_address = 1;
     while (1) {
+        if (next_id > 0x98) {
+            next_id = 0x90;
+            next_address++;
+        }
+
+        if (next_address > DALYBMS_MAX_BMS) {
+            next_address = 1;
+        }
+
+        // Send a message to the BMS
+        struct dalybms_message out_msg = {
+                .address = next_address,
+                .id = next_id,
+        };
+        dalybms_send(&out_msg);
+
+        // Increment the id for the next message
+        next_id++;
+
+        // Read the response
         uint8_t buf[32];
-        int len = uart_read_bytes(_uart_num, buf, sizeof(buf), 100 / portTICK_PERIOD_MS);
+        int len = uart_read_bytes(_uart_num, buf, sizeof(buf), 500 / portTICK_PERIOD_MS);
         if (len < 0) {
             LOGE("dalybms: Something went wrong while retrieving data!\n");
             continue;
         }
 
+        // Push the bytes to the ring buffer
         ringbuf_push(&rbuf, buf, len);
 
+        // Check if we have enough bytes to read a message
         while (ringbuf_available(&rbuf) >= sizeof(struct dalybms_message)) {
-            struct dalybms_message msg;
-            ringbuf_peek(&rbuf, (uint8_t *) &msg, sizeof(struct dalybms_message));
+            struct dalybms_message in_msg;
+            ringbuf_peek(&rbuf, (uint8_t *) &in_msg, sizeof(struct dalybms_message));
 
-            if (msg.magic != DALYBMS_MAGIC) {
+            if (in_msg.magic != DALYBMS_MAGIC) {
                 // Not the magic value we're expecting, discard it
                 LOGW("dalybms: Discarding byte because of wrong magic!\n");
                 ringbuf_discard(&rbuf, 1);
                 continue;
             }
 
-            if (msg.checksum != dalybms_checksum((uint8_t *) &msg)) {
+            if (in_msg.checksum != dalybms_checksum((uint8_t *) &in_msg)) {
                 // Wrong checksum, discard first byte
                 LOGW("dalybms: Discarding byte because of wrong checksum!\n");
                 ringbuf_discard(&rbuf, 1);
@@ -198,32 +246,17 @@ void dalybms_receive(void *arg) {
             // Discard the bytes of this message
             ringbuf_discard(&rbuf, sizeof(struct dalybms_message));
             
-            LOGI("dalybms: Address: %d, ID: 0x%02X, Length: %d, Data: ", msg.address, msg.id, msg.len);
-            printbuf(msg.data, msg.len);
+            LOGI("dalybms: Address: %d, ID: 0x%02X, Length: %d, Data: ", in_msg.address, in_msg.id, in_msg.len);
+            printbuf(in_msg.data, in_msg.len);
             printf("\n");
 
-            dalybms_handle_message(&msg);
+            dalybms_handle_message(&in_msg);
         }
     }
 }
 
-static int dalybms_send(struct dalybms_message *msg) {
-    msg->magic = DALYBMS_MAGIC;
-    if (msg->address < 0x40) msg->address += 0x40 - 1; // Address 1 is 0x40
-    msg->len = 8;
-    msg->checksum = dalybms_checksum((uint8_t *) msg);
-    return uart_write_bytes(_uart_num, msg, sizeof(struct dalybms_message)) == sizeof(struct dalybms_message);
-}
-
-void dalybms_test(void) {    
-    for (uint8_t i = 0x90; i <= 0x98; i++) {
-        struct dalybms_message msg = {
-            .address = 1,
-            .id = i,
-        };
-        dalybms_send(&msg);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
+struct dalybms_data *dalybms_get_data(void) {
+    return _data;
 }
 
 void dalybms_init(uart_port_t uart_num, gpio_num_t ro, gpio_num_t re_de, gpio_num_t di) {
@@ -244,5 +277,5 @@ void dalybms_init(uart_port_t uart_num, gpio_num_t ro, gpio_num_t re_de, gpio_nu
     assert(uart_set_pin(_uart_num, di, ro, re_de, UART_PIN_NO_CHANGE) == ESP_OK);
     assert(uart_set_mode(_uart_num, UART_MODE_RS485_HALF_DUPLEX) == ESP_OK);
 
-    xTaskCreate(dalybms_receive, "dalybms_receive", 2048, NULL, 5, NULL);
+    xTaskCreate(dalybms_task_function, "dalybms_task_function", 2048, NULL, 5, NULL);
 }

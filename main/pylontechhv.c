@@ -21,6 +21,12 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 #include "log.h"
+#include "dalybms.h"
+#include "shunt.h"
+#include "thermometer.h"
+#include "logic.h"
+
+static uint8_t device_address = 1;
 
 static void pylontechhv_0x4210(twai_message_t *msg, int32_t battery_voltage, int32_t battery_current, int16_t temp, uint8_t soc, uint8_t soh) {
     msg->data_length_code = 8;
@@ -289,46 +295,53 @@ static void pylontechhv_0x7340(twai_message_t *msg) {
     msg->data[7] = 0x00;
 }
 
-static uint8_t device_address = 1;
-
 static void pylontechhv_send_0x4200_0_response(void) {
     twai_message_t msg = {
         .extd = 1,
     };
 
     msg.identifier = 0x4210 + device_address;
-    pylontechhv_0x4210(&msg, 0, 0, 0, 0, 0);
+    //int32_t battery_voltage, int32_t battery_current, int16_t temp, uint8_t soc, uint8_t soh
+    pylontechhv_0x4210(&msg, dalybms_get_battery_voltage(), shunt_get_battery_current(), thermometer_get_temp(), dalybms_get_battery_soc(), dalybms_get_battery_soh());
     assert(twai_transmit(&msg, portMAX_DELAY) == ESP_OK);
 
     msg.identifier = 0x4220 + device_address;
-    pylontechhv_0x4220(&msg, 0, 0, 0, 0);
+    //int32_t charge_cutoff_voltage, int32_t discharge_cutoff_voltage, int32_t max_charge_current, int32_t max_discharge_current
+    pylontechhv_0x4220(&msg, logic_get_charge_cutoff_voltage(), logic_get_charge_cutoff_current(), logic_get_max_charge_current(), logic_get_max_discharge_current());
     assert(twai_transmit(&msg, portMAX_DELAY) == ESP_OK);
 
     msg.identifier = 0x4230 + device_address;
-    pylontechhv_0x4230(&msg, 0, 0, 0, 0);
+    //int32_t max_cell_voltage, int32_t min_cell_voltage, uint16_t max_cell_voltage_id, uint16_t min_cell_voltage_id
+    pylontechhv_0x4230(&msg, dalybms_get_max_cell_voltage(), dalybms_get_max_cell_voltage_id(), dalybms_get_min_cell_voltage(), dalybms_get_min_cell_voltage_id());
     assert(twai_transmit(&msg, portMAX_DELAY) == ESP_OK);
 
     msg.identifier = 0x4240 + device_address;
-    pylontechhv_0x4240(&msg, 0, 0, 0, 0);
+    //int16_t max_cell_temp, int16_t min_cell_temp, uint16_t max_cell_temp_id, uint16_t min_cell_temp_id
+    pylontechhv_0x4240(&msg, thermometer_get_max_cell_temp(), thermometer_get_min_cell_temp(), thermometer_get_max_cell_temp_id(), thermometer_get_min_cell_temp_id());
     assert(twai_transmit(&msg, portMAX_DELAY) == ESP_OK);
 
     msg.identifier = 0x4250 + device_address;
+    //uint8_t basic_status, uint16_t cycle_period, uint8_t fault, uint16_t alarm, uint16_t protection
     pylontechhv_0x4250(&msg, 0, 0, 0, 0, 0);
     assert(twai_transmit(&msg, portMAX_DELAY) == ESP_OK);
 
     msg.identifier = 0x4260 + device_address;
-    pylontechhv_0x4260(&msg, 0, 0, 0, 0);
+    //int32_t max_module_voltage, int32_t min_module_voltage, uint16_t max_module_voltage_id, uint16_t min_module_voltage_id
+    pylontechhv_0x4260(&msg, dalybms_get_max_module_voltage(), dalybms_get_min_module_voltage(), dalybms_get_max_module_voltage_id(), dalybms_get_min_module_voltage_id());
     assert(twai_transmit(&msg, portMAX_DELAY) == ESP_OK);
 
     msg.identifier = 0x4270 + device_address;
+    //int16_t module_max_temp, int16_t module_min_temp, uint16_t module_max_temp_id, uint16_t module_min_temp_id
     pylontechhv_0x4270(&msg, 0, 0, 0, 0);
     assert(twai_transmit(&msg, portMAX_DELAY) == ESP_OK);
 
     msg.identifier = 0x4280 + device_address;
+    //uint8_t charge_forbidden, uint8_t discharge_forbidden
     pylontechhv_0x4280(&msg, 0, 0);
     assert(twai_transmit(&msg, portMAX_DELAY) == ESP_OK);
 
     msg.identifier = 0x4290 + device_address;
+    //uint8_t fault_extension
     pylontechhv_0x4290(&msg, 0);
     assert(twai_transmit(&msg, portMAX_DELAY) == ESP_OK);
 }
@@ -360,11 +373,11 @@ static void pylontechhv_send_0x4200_2_response(void) {
 #define PYLONTECHHV_CAN_CHARGE_DISCHARGE_ID 0x8210
 #define PYLONTECHHV_CAN_ERROR_MASK_ID 0x8240
 
-static void pylontechhv_recv_can(void *arg) {
+static void pylontechhv_task_function(void *arg) {
     while (1) {
         twai_message_t msg;
         if (twai_receive(&msg, portMAX_DELAY) == ESP_OK) {
-            LOGI("pylontechhv: Received CAN message with ID 0x%04lX", msg.identifier);
+            LOGI("pylontechhv: Received CAN message. identifier: 0x%04lX, extd: %d\n", msg.identifier, msg.extd);
 
             if (msg.identifier == PYLONTECHHV_CAN_REQUEST_ID) {
                 if (msg.data[0] == 0) {
@@ -379,19 +392,19 @@ static void pylontechhv_recv_can(void *arg) {
             } else if ((msg.identifier & 0xFFF0) == PYLONTECHHV_CAN_ERROR_MASK_ID) {
 
             } else {
-                LOGW("pylontechhv: Received unknown CAN message with ID 0x%04lX", msg.identifier);
+                LOGW("pylontechhv: Received unknown CAN message. identifier: 0x%04lX", msg.identifier);
             }
         }
     }
 }
 
 void pylontechhv_init(gpio_num_t tx, gpio_num_t rx) {
-    twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(GPIO_NUM_21, GPIO_NUM_22, TWAI_MODE_NORMAL);
+    twai_general_config_t g_config = TWAI_GENERAL_CONFIG_DEFAULT(tx, rx, TWAI_MODE_NORMAL);
     twai_timing_config_t t_config = TWAI_TIMING_CONFIG_500KBITS();
     twai_filter_config_t f_config = TWAI_FILTER_CONFIG_ACCEPT_ALL();
 
     assert(twai_driver_install(&g_config, &t_config, &f_config) == ESP_OK);
     assert(twai_start() == ESP_OK);
 
-    xTaskCreate(pylontechhv_recv_can, "pylontechhv_recv_can", 2048, NULL, 5, NULL);
+    xTaskCreate(pylontechhv_task_function, "pylontechhv_task_function", 2048, NULL, 5, NULL);
 }
